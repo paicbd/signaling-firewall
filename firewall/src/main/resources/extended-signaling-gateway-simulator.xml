@@ -1,0 +1,130 @@
+<?xml version="1.0" ?>
+<ExtendedSignalingGateway>
+
+  <Applications>
+    <Application name="MapProxy" enabled="true" workers="3" channel="Map" cdr="map-cdr">
+      <Rules filename="new-map-application-rules.xml"/>
+    </Application>
+  </Applications>
+
+  <Channels>
+    <Channel name="Map" enabled="true" handler="MapChannel" queue="map" layer="mapLayer">
+      <Primitives>
+        <Primitive name="updateLocation" />
+        <Primitive name="updateGprsLocation" />
+        <Primitive name="provideRoamingNumber" />
+        <Primitive name="mtForwardSM" />
+        <Primitive name="moForwardSM" />
+        <Primitive name="sendRoutingInfoForSM"/>
+      </Primitives>
+    </Channel>
+  </Channels>
+
+  <Layers>
+    <sctp name="sctpserver" singleThread="true" connectDelay="10000" enable="true">
+      <association name="assoc_0" host="192.168.1.2:2906" peer="192.168.1.200:2906" transport="SCTP" multihome="" />
+      <server name="testsrv" host="192.168.1.2:2905" transport="SCTP" acceptAnonymousConnections="false" concurrentConnections="10" multihome="">
+        <serverAssociation name="server_assoc_0" peer="192.168.1.100:2905" transport="SCTP" />
+      </server>
+      <!--association name="assoc_NSN" host="172.17.0.2:3905" peer="172.21.219.3:3906" transport="SCTP" multihome="127.0.0.10,127.0.0.11" /-->
+    </sctp>
+    <m3ua name="m3uaserver" heartbeatTime="10000" sctp="sctpserver" productName="PAiC_ESG" enable="true">
+      <as name="AS1" functionality="IPSP" exchangetype="SE" ipsptype="SERVER" routingcontext="101" trafficmode="LOADSHARE" minaspforloadbalance="0" networkappearance="102">
+        <asp name="ASP1" sctpAssociationName="server_assoc_0" heartbeatenabled="true" />
+        <route destinationPointCode="100" originatingPointCode="101" serviceIndicator="3" />
+      </as>
+      <as name="AS2" functionality="IPSP" exchangetype="SE" ipsptype="CLIENT" routingcontext="101" trafficmode="LOADSHARE" minaspforloadbalance="0" networkappearance="102">
+        <asp name="ASP2" sctpAssociationName="assoc_0" heartbeatenabled="true" />
+        <route destinationPointCode="200" originatingPointCode="201" serviceIndicator="3" />
+      </as>
+    </m3ua>
+    <sccp name="sccpserver" m3ua="m3uaserver" enable="true">
+      <spc name="200" remoteSpcId="2" remoteSpc="200" remoteSpcFlag="0" mask="0" />
+      <spc name="100" remoteSpcId="1" remoteSpc="100" remoteSpcFlag="0" mask="0" />
+      <ssn name="8_100" remoteSsnid="1" remoteSpc="100" remoteSsn="8" remoteSsnFlag="0" markProhibitedWhenSpcResuming="false" />
+      <ssn name="6" remoteSsnid="2" remoteSpc="200" remoteSsn="6" remoteSsnFlag="0" markProhibitedWhenSpcResuming="false" />
+      <ssn name="8_200" remoteSsnid="3" remoteSpc="200" remoteSsn="8" remoteSsnFlag="0" markProhibitedWhenSpcResuming="false" />
+      <!-- sap === Service Access Point-->
+      <sap name="SAPServer" id="1" mtp3Id="1" opc="101" ni="2" networkId="0" localGtDigits="">
+        <destination name="SAPServer" destid="1" firstDpc="100" lastDpc="100" firstSls="0" lastSls="255" slsMask="255" />
+      </sap>
+      <sap name="SAPClient" id="2" mtp3Id="1" opc="201" ni="2" networkId="0" localGtDigits="">
+        <destination name="SAPClient" destid="1" firstDpc="200" lastDpc="200" firstSls="0" lastSls="255" slsMask="255" />
+      </sap>
+      <routingAddress name="localRoutingServer" id="1" routingIndicator="ROUTING_BASED_ON_GLOBAL_TITLE" digits="50373700000">
+        <sccpAddress dpc="101" ssn="0">
+          <!-- encodingScheme = 2 => BCDEvenEncodingScheme-->
+          <gt type="GT0100" translationType="0" encodingScheme="1" numberingPlan="1" natureOfAddress="INTERNATIONAL" digits="-" />
+        </sccpAddress>
+      </routingAddress>
+      <routingAddress name="remoteRoutingServer" id="2" routingIndicator="ROUTING_BASED_ON_GLOBAL_TITLE" digits="50373700001">
+        <sccpAddress dpc="100" ssn="0">
+          <gt type="GT0100" translationType="0" encodingScheme="1" numberingPlan="1" natureOfAddress="INTERNATIONAL" digits="-" />
+        </sccpAddress>
+      </routingAddress>
+
+      <routingAddress name="localRoutingServer_3" id="3" routingIndicator="ROUTING_BASED_ON_GLOBAL_TITLE" digits="50373700000">
+        <sccpAddress dpc="201" ssn="0">
+          <!-- encodingScheme = 2 => BCDEvenEncodingScheme-->
+          <gt type="GT0100" translationType="0" encodingScheme="1" numberingPlan="1" natureOfAddress="INTERNATIONAL" digits="-" />
+        </sccpAddress>
+      </routingAddress>
+      <routingAddress name="remoteRoutingServer_4" id="4" routingIndicator="ROUTING_BASED_ON_GLOBAL_TITLE" digits="50373700001">
+        <sccpAddress dpc="200" ssn="0">
+          <gt type="GT0100" translationType="0" encodingScheme="1" numberingPlan="1" natureOfAddress="INTERNATIONAL" digits="-" />
+        </sccpAddress>
+      </routingAddress>
+
+      <rule name="remoteRuleServer" id="1" ruleType="Solitary" loadSharingAlgo="Undefined" originationType="REMOTE" pattern="*" mask="K" pAddressId="1" sAddressId="-1" networkId="0">
+        <!--  attribute for rule newCallingPartyAddressId if this is not available in the code it should be null-->
+        <patternSccpAddress routingIndicator="ROUTING_BASED_ON_GLOBAL_TITLE" dpc="101" ssn="0" aivalue="17">
+          <gt type="GT0100" translationType="0" encodingScheme="1" numberingPlan="1" natureOfAddress="INTERNATIONAL" digits="*" />
+        </patternSccpAddress>
+      </rule>
+      <rule name="localRuleServer" id="2" ruleType="Solitary" loadSharingAlgo="Undefined" originationType="LOCAL" pattern="*" mask="K" pAddressId="4" sAddressId="-1" networkId="0">
+        <!--  attribute for rule newCallingPartyAddressId if this is not available in the code it should be null-->
+        <patternSccpAddress routingIndicator="ROUTING_BASED_ON_GLOBAL_TITLE" dpc="0" ssn="0" aivalue="16">
+          <gt type="GT0100" translationType="0" encodingScheme="1" numberingPlan="1" natureOfAddress="INTERNATIONAL" digits="*" />
+        </patternSccpAddress>
+
+        <patternCallingSccpAddress routingIndicator="ROUTING_BASED_ON_GLOBAL_TITLE" dpc="0" ssn="0" aivalue="16">
+          <gt type="GT0100" translationType="0" encodingScheme="1" numberingPlan="1" natureOfAddress="INTERNATIONAL" digits="50373700001"/>
+        </patternCallingSccpAddress>
+
+      </rule>
+
+      <rule name="remoteRuleServer_3" id="3" ruleType="Solitary" loadSharingAlgo="Undefined" originationType="REMOTE" pattern="*" mask="K" pAddressId="3" sAddressId="-1" networkId="0">
+        <!--  attribute for rule newCallingPartyAddressId if this is not available in the code it should be null-->
+        <patternSccpAddress routingIndicator="ROUTING_BASED_ON_GLOBAL_TITLE" dpc="201" ssn="0" aivalue="17">
+          <gt type="GT0100" translationType="0" encodingScheme="1" numberingPlan="1" natureOfAddress="INTERNATIONAL" digits="*" />
+        </patternSccpAddress>
+      </rule>
+      <rule name="localRuleServer_4" id="4" ruleType="Solitary" loadSharingAlgo="Undefined" originationType="LOCAL" pattern="*" mask="K" pAddressId="2" sAddressId="-1" networkId="0">
+        <!--  attribute for rule newCallingPartyAddressId if this is not available in the code it should be null-->
+        <patternSccpAddress routingIndicator="ROUTING_BASED_ON_GLOBAL_TITLE" dpc="0" ssn="0" aivalue="16">
+          <gt type="GT0100" translationType="0" encodingScheme="1" numberingPlan="1" natureOfAddress="INTERNATIONAL" digits="50373700001" />
+        </patternSccpAddress>
+      </rule>
+
+    </sccp>
+
+    <!-- ************ -->
+    <!-- *** TCAP *** -->
+    <!-- ************ -->
+    <!-- *** TCAP layer for MAP Proxy *** -->
+    <tcap name="tcapLayerForMap" sccp="sccpserver" ssn="8" extraSsn="149,146,6,7,252"  dialogidletimeout="60000" invoketimeout="30000" maxdialogs="5000" enable="true" />
+
+    <!-- *********** -->
+    <!-- *** MAP *** -->
+    <!-- *********** -->
+    <map name="mapLayer" tcap="tcapLayerForMap" enable="true" /> <!-- MAP PROXY -->
+
+  </Layers>
+
+  <cdr>
+    <interface name="map-cdr" appender="cdrlogger" display-names="true" fields="TIMESTAMP,ID,STATUS,DURATION,PRIMITIVE,RULE_NAME,ERROR_CODE,ERROR_CODE_MESSAGE,ENDTIME,ORIGINAL_IMSI,NEW_IMSI,START_TIME,LOCAL_DIALOG_ID,REMOTE_DIALOG_ID,NEW_DIALOG_ID,LOCAL_GT,LOCAL_ROUTING_INDICATOR,LOCAL_SSN,LOCAL_SPC,REMOTE_GT,REMOTE_ROUTING_INDICATOR,REMOTE_SSN,REMOTE_SPC,NEW_CALLING_GT,NEW_CALLED_GT" separator="|" />
+    <interface name="cap-cdr" appender="capCdrLogger" display-names="true" fields="TIMESTAMP,ID,STATUS,DURATION,ERROR_CODE,ERROR_CODE_MESSAGE,ENDTIME,ORIGINAL_IMSI,NEW_IMSI,LOCAL_DIALOG_ID,REMOTE_DIALOG_ID,NEW_DIALOG_ID,SERVICE_KEY,RULE_NAME,LOCAL_GT,LOCAL_ROUTING_INDICATOR,LOCAL_SSN,LOCAL_SPC,REMOTE_GT,REMOTE_ROUTING_INDICATOR,REMOTE_SSN,REMOTE_SPC,NEW_CALLING_GT,NEW_CALLED_GT,MSRN,LEG,CALLING_PARTY_NUMBER,CALLED_PARTY_NUMBER,ERB_EVENT_TYPE,SESSION_ID" separator="|" />
+  </cdr>
+
+  <Monitoring enable="false" folderPath="./logs" refreshInterval="5000" />
+</ExtendedSignalingGateway>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Settings>
+  <FiltersGts>
+    <Gts name="public-node" regex="true">
+      <Gt>.*</Gt>
+      <Gt>1222222</Gt>
+    </Gts>
+    <Gts name="private-node" regex="true">
+      <Gt>1222222</Gt>
+      <Gt>.*</Gt>
+    </Gts>
+  </FiltersGts>
+  <Rules>
+    <Rule name="sri_Request" regex="true" gts-allowed="private-node">
+      <Match
+              primitive="sendRoutingInfoForSM"
+              imsi=".*"
+              dst-msisdn=".*"
+              called-party-address=".*"
+              calling-party-address=".*"
+              keyword-message=".*"
+      />
+    </Rule>
+
+    <Rule name="mtForwardSM_Request" regex="true">
+      <Match
+              primitive="mtForwardSM"
+              imsi=".*"
+              src-msisdn=".*"
+              called-party-address=".*"
+              calling-party-address=".*"
+              keyword-message=".*"
+      />
+    </Rule>
+
+    <Rule name="moForwardSM_Request" regex="true">
+    <Match
+            primitive="moForwardSM"
+            imsi=".*"
+            src-msisdn=".*"
+            dst-msisdn=".*"
+            called-party-address=".*"
+            calling-party-address=".*"
+            keyword-message=".*"
+    />
+    </Rule>
+
+
+  </Rules>
+</Settings>

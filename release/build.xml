@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<project name="signaling.firewall.release" default="release" basedir=".">
+    <property environment="sys"/>
+    <property name="release.dir" location="${ant.file.signaling.firewall.release}/../target" />
+    <property name="base.dir" location="${ant.file.signaling.firewall.release}/.." />
+    <property name="bin.dir" location="${release.dir}/bin" />
+    <property name="conf.dir" location="${release.dir}/conf" />
+    <property name="logs.dir" location="${release.dir}/logs" />
+    <property name="checkout.dir" value="${base.dir}/checkout" />
+    <property name="signaling.firewall.release.version" value="1.0.0-SNAPSHOT" />
+    <property name="checkout.signaling.firewall.dir" value="${base.dir}/.." />
+
+    <property name="release.build.goals" value="clean install dependency:tree -Dmaven.test.skip=true" />
+
+    <condition property="mvn.executable" value="${sys.M2_HOME}\bin\mvn.bat" else="mvn">
+        <os family="windows"/>
+    </condition>
+
+
+    <target name="release" depends="clean,build-firewall,copy-firewall,make-final-zip" />
+
+    <target name="clean">
+        <echo>Delete ${release.dir}</echo>
+        <delete dir="${release.dir}"/>
+        <delete dir="${release.dir}/bin"/>
+        <delete dir="${release.dir}/conf"/>
+        <delete dir="${release.dir}/logs"/>
+        <delete>
+            <fileset dir="${base.dir}">
+                <include name="signaling-firewall-*.*" />
+            </fileset>
+        </delete>
+    </target>
+
+
+    <target name="build-firewall">
+        <echo>building Signaling Firewall in ${checkout.signaling.firewall.dir} and ${release.build.goals}</echo>
+        <exec failonerror="true" executable="${mvn.executable}" dir="${checkout.signaling.firewall.dir}">
+            <arg line="${release.build.goals} -Dmaven.test.skip=true -Passembly" />
+        </exec>
+
+        <copy overwrite="true" todir="${release.dir}/bin/libs">
+            <fileset file="${base.dir}/../firewall/target/lib/**" />
+        </copy>
+
+        <copy overwrite="true" todir="${release.dir}/bin">
+            <fileset file="${base.dir}/../firewall/target/*.jar" />
+        </copy>
+
+
+        <copy failonerror="true" todir="${release.dir}/conf">
+            <fileset file="${base.dir}/../firewall/src/main/resources/*.xml"/>
+        </copy>
+
+        <copy failonerror="true" todir="${release.dir}/bin">
+            <fileset file="${base.dir}/utils/start/**"/>
+        </copy>
+        <replace file="${release.dir}/bin/start.sh" token="VERSION" value="${signaling.firewall.release.version}"/>
+    </target>
+
+    <target name="copy-firewall">
+        <mkdir dir="${release.dir}/bin" />
+        <mkdir dir="${release.dir}/bin/libs" />
+        <mkdir dir="${release.dir}/conf" />
+        <mkdir dir="${release.dir}/logs" />
+    </target>
+
+
+    <target name="make-final-zip" depends="set-time-stamp">
+        <zip destfile="${base.dir}/Signaling-Firewall-${signaling.firewall.release.version}.zip" filesonly="false">
+            <zipfileset dir="${release.dir}" prefix="Signaling-Firewall-${signaling.firewall.release.version}">
+                <include name="**" />
+            </zipfileset>
+        </zip>
+    </target>
+
+    <target name="set-time-stamp" unless="skip.timestamp">
+        <tstamp>
+            <format property="time.stamp" pattern="yyMMddHHmm" />
+        </tstamp>
+    </target>
+
+</project>
